@@ -26,7 +26,7 @@ A real-time Electron-based desktop GUI for [DeepSeek-OCR](https://github.com/dee
 
 ## Quick Start (Windows)
 
-1. **Extract** the downloaded ZIP file
+1. **Extract** the [ZIP file](https://github.com/ihatecsv/deepseek-ocr-client/archive/refs/heads/main.zip)
 2. **Run** `start.bat`
    - First run will automatically install dependencies.
    - Subsequent runs will start quicker.
@@ -52,6 +52,7 @@ That's it!
 ## Future goals (PRs welcome!)
 
 - [ ] Code cleanup needed (quickly put together)
+- [ ] Updater from GitHub releases
 - [ ] PDF support
 - [ ] Batch processing
 - [ ] ???
