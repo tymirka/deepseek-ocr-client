@@ -56,6 +56,7 @@ That's it!
 - [ ] Updater from GitHub releases
 - [ ] PDF support
 - [ ] Batch processing
+- [ ] Better progress bar algo
 - [ ] ???
 
 ## License
