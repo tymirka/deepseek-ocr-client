@@ -39,7 +39,7 @@ That's it!
 
 ## Linux/macOS
 
-**Note:** Linux and macOS have not been tested yet. Use `start-client.sh` instead of `start--client.bat`.
+**Note:** Linux and macOS have not been tested yet. Use `start-client.sh` instead of `start-client.bat`.
 
 **PRs welcome!** If you test on Linux/macOS and encounter issues, please open a pull request with fixes.
 
