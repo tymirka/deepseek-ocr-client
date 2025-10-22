@@ -23,6 +23,11 @@ def check_command(command):
 
 def run_command(command, shell=False, check=True):
     """Run a command and return the result."""
+    # On Windows, commands like npm need shell=True
+    if sys.platform == "win32" and isinstance(command, list):
+        if command[0] in ['npm', 'npx']:
+            shell = True
+
     try:
         result = subprocess.run(
             command,
@@ -76,11 +81,13 @@ def install_node_dependencies():
 def get_gpu_compute_capability():
     """Get GPU compute capability using nvidia-smi."""
     try:
+        # nvidia-smi is a regular exe, doesn't need shell
         result = subprocess.run(
             ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
+            shell=False
         )
         compute_cap = result.stdout.strip()
         if compute_cap:
@@ -89,7 +96,8 @@ def get_gpu_compute_capability():
                 ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
+                shell=False
             )
             gpu_name = name_result.stdout.strip()
 
