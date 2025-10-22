@@ -27,7 +27,7 @@ A real-time Electron-based desktop GUI for [DeepSeek-OCR](https://github.com/dee
 ## Quick Start (Windows)
 
 1. **Extract** the [ZIP file](https://github.com/ihatecsv/deepseek-ocr-client/archive/refs/heads/main.zip)
-2. **Run** `start.bat`
+2. **Run** `start-client.bat`
    - First run will automatically install dependencies.
    - Subsequent runs will start quicker.
 3. **Load Model** - Click the "Load Model" button in the app, this will download or load the model.
@@ -39,7 +39,7 @@ That's it!
 
 ## Linux/macOS
 
-**Note:** Linux and macOS have not been tested yet. Use `start.sh` instead of `start.bat`.
+**Note:** Linux and macOS have not been tested yet. Use `start-client.sh` instead of `start--client.bat`.
 
 **PRs welcome!** If you test on Linux/macOS and encounter issues, please open a pull request with fixes.
 
