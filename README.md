@@ -35,7 +35,7 @@ A real-time Electron-based desktop GUI for [DeepSeek-OCR](https://github.com/dee
 4. **Drop an image** or click the drop zone to select one.
 5. **Run OCR** - Click "Run OCR" to process.
 
-That's it!
+Note: if you have issues processing images but the model loads properly, please close and re-open the app and try with the default resolution for "base" and "size". This is a [known issue](https://github.com/ihatecsv/deepseek-ocr-client/issues/2), if you can help to fix it I would appreciate it!
 
 ## Linux/macOS
 
