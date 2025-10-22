@@ -13,7 +13,7 @@ A real-time Electron-based desktop GUI for [DeepSeek-OCR](https://github.com/dee
 
 - Click regions to copy 
 - Export results as ZIP with markdown images
-- GPU acceleration support (CUDA)
+- GPU acceleration (CUDA)
 
 <img src="docs/images/document2.png" width="1000">
 
@@ -22,7 +22,7 @@ A real-time Electron-based desktop GUI for [DeepSeek-OCR](https://github.com/dee
 - Windows 10/11, other OS are experimental
 - Node.js 18+ ([download](https://nodejs.org/))
 - Python 3.12+ ([download](https://www.python.org/))
-- Optional: NVIDIA GPU with CUDA
+- NVIDIA GPU with CUDA
 
 ## Quick Start (Windows)
 
@@ -56,6 +56,7 @@ That's it!
 - [ ] Updater from GitHub releases
 - [ ] PDF support
 - [ ] Batch processing
+- [ ] CPU support?
 - [ ] Better progress bar algo
 - [ ] ???
 
