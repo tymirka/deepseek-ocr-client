@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -21,6 +21,23 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
+
+  // Open external links in browser instead of Electron window
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
+  // Handle navigation to external URLs
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    // Allow navigation to local files and the Python server
+    if (url.startsWith('file://') || url.startsWith(PYTHON_SERVER_URL)) {
+      return;
+    }
+    // Open external URLs in browser
+    event.preventDefault();
+    shell.openExternal(url);
+  });
 
   // Open DevTools in development mode
   if (process.argv.includes('--dev')) {
