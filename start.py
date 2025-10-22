@@ -21,12 +21,11 @@ def check_command(command):
     """Check if a command exists in PATH."""
     return shutil.which(command) is not None
 
-def run_command(command, shell=False, check=True):
+def run_command(command, shell=None, check=True):
     """Run a command and return the result."""
-    # On Windows, commands like npm need shell=True
-    if sys.platform == "win32" and isinstance(command, list):
-        if command[0] in ['npm', 'npx']:
-            shell = True
+    # On Windows, we need shell=True for batch files like npm
+    if shell is None:
+        shell = sys.platform == "win32"
 
     try:
         result = subprocess.run(
@@ -43,6 +42,10 @@ def run_command(command, shell=False, check=True):
             print(f"Error: {e.stderr}")
             sys.exit(1)
         return e
+    except FileNotFoundError as e:
+        print(f"✗ Command not found: {command[0] if isinstance(command, list) else command}")
+        print("  Make sure the command is installed and in your PATH")
+        sys.exit(1)
 
 def check_prerequisites():
     """Check if Node.js and Python are installed."""
@@ -81,13 +84,12 @@ def install_node_dependencies():
 def get_gpu_compute_capability():
     """Get GPU compute capability using nvidia-smi."""
     try:
-        # nvidia-smi is a regular exe, doesn't need shell
         result = subprocess.run(
             ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
             capture_output=True,
             text=True,
             check=True,
-            shell=False
+            shell=(sys.platform == "win32")
         )
         compute_cap = result.stdout.strip()
         if compute_cap:
@@ -97,7 +99,7 @@ def get_gpu_compute_capability():
                 capture_output=True,
                 text=True,
                 check=True,
-                shell=False
+                shell=(sys.platform == "win32")
             )
             gpu_name = name_result.stdout.strip()
 
@@ -165,12 +167,19 @@ def setup_python_environment():
             print("  Installing with CUDA 12.4 support...")
             index_url = "https://download.pytorch.org/whl/cu124"
 
-        # Install PyTorch
-        run_command([
+        # Install PyTorch (with custom temp dir for downloads)
+        env_with_temp = os.environ.copy()
+        if 'LOCAL_TEMP_DIR' in os.environ:
+            temp_dir = os.environ['LOCAL_TEMP_DIR']
+            env_with_temp['TMPDIR'] = temp_dir
+            env_with_temp['TEMP'] = temp_dir
+            env_with_temp['TMP'] = temp_dir
+
+        subprocess.run([
             str(pip_path), "install",
             "torch==2.6.0", "torchvision==0.21.0", "torchaudio==2.6.0",
             "--index-url", index_url
-        ])
+        ], env=env_with_temp, check=True, shell=(sys.platform == "win32"))
         print("✓ PyTorch installed")
     else:
         print(f"✓ PyTorch already installed: {pytorch_check.stdout.strip()}")
@@ -199,8 +208,20 @@ def setup_python_environment():
                 with open(temp_req, 'w') as f:
                     f.write('\n'.join(requirements))
 
-                # Install from temp file
-                run_command([str(pip_path), "install", "-r", str(temp_req)])
+                # Install from temp file (with custom temp dir for downloads)
+                env_with_temp = os.environ.copy()
+                if 'LOCAL_TEMP_DIR' in os.environ:
+                    temp_dir = os.environ['LOCAL_TEMP_DIR']
+                    env_with_temp['TMPDIR'] = temp_dir
+                    env_with_temp['TEMP'] = temp_dir
+                    env_with_temp['TMP'] = temp_dir
+
+                subprocess.run(
+                    [str(pip_path), "install", "-r", str(temp_req)],
+                    env=env_with_temp,
+                    check=True,
+                    shell=(sys.platform == "win32")
+                )
                 temp_req.unlink()  # Remove temp file
 
         print("✓ Python dependencies installed")
@@ -217,19 +238,18 @@ def start_application(python_path):
     env = os.environ.copy()
     env['PYTHON_PATH'] = str(python_path)
 
-    # Make sure npm can be found - use shell=True on Windows
-    npm_command = ["npm", "start"]
-    use_shell = sys.platform == "win32"
-
     # Run npm start
     try:
-        subprocess.run(npm_command, env=env, check=True, shell=use_shell)
+        subprocess.run(["npm", "start"], env=env, check=True, shell=(sys.platform == "win32"))
     except subprocess.CalledProcessError:
         print("\n✗ Application exited with an error")
         sys.exit(1)
     except KeyboardInterrupt:
         print("\n✓ Application closed")
         sys.exit(0)
+    except FileNotFoundError:
+        print("\n✗ npm not found. Make sure Node.js is installed and in your PATH")
+        sys.exit(1)
 
 def main():
     """Main entry point."""
@@ -239,20 +259,18 @@ def main():
     script_dir = Path(__file__).parent
     os.chdir(script_dir)
 
-    # Set up local cache/temp directories to avoid using system temp on C: drive
+    # Set up local cache directories (but don't set TEMP globally - it breaks npm)
     cache_dir = Path("cache")
     python_temp_dir = cache_dir / "python-temp"
     python_temp_dir.mkdir(parents=True, exist_ok=True)
 
-    # Set temp environment variables to use local cache
-    os.environ['TMPDIR'] = str(python_temp_dir)
-    os.environ['TEMP'] = str(python_temp_dir)
-    os.environ['TMP'] = str(python_temp_dir)
-
-    # Also set pip cache to local directory
+    # Set pip cache to local directory
     pip_cache_dir = cache_dir / "pip"
     pip_cache_dir.mkdir(parents=True, exist_ok=True)
     os.environ['PIP_CACHE_DIR'] = str(pip_cache_dir)
+
+    # Store temp dir path for use in pip commands
+    os.environ['LOCAL_TEMP_DIR'] = str(python_temp_dir)
 
     print(f"Using local cache directory: {cache_dir}")
 
