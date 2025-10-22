@@ -85,7 +85,7 @@ header h1 {
 .status-value {
     font-weight: 600;
     padding: 2px 8px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.726);
     border-radius: 4px;
 }
 
@@ -541,7 +541,7 @@ main {
 }
 
 .warning {
-    color: #ffc107;
+    color: #ba8b00;
 }
 
 /* Lightbox */
