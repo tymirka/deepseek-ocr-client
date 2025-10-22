@@ -52,6 +52,7 @@ That's it!
 ## Future goals (PRs welcome!)
 
 - [ ] Code cleanup needed (quickly put together)
+- [ ] TypeScript
 - [ ] Updater from GitHub releases
 - [ ] PDF support
 - [ ] Batch processing
