@@ -1,0 +1,61 @@
+# DeepSeek-OCR Client
+
+A real-time Electron-based desktop GUI for [DeepSeek-OCR](https://github.com/deepseek-ai/DeepSeek-OCR)
+
+**Unaffiliated with [DeepSeek](https://www.deepseek.com/)**
+
+## Features
+
+- Drag-and-drop image upload
+- Real-time OCR processing
+
+<img src="docs/images/document.gif" width="1000">
+
+- Click regions to copy 
+- Export results as ZIP with markdown images
+- GPU acceleration support (CUDA)
+
+<img src="docs/images/document2.png" width="1000">
+
+## Requirements
+
+- Windows 10/11, other OS are experimental
+- Node.js 18+ ([download](https://nodejs.org/))
+- Python 3.12+ ([download](https://www.python.org/))
+- Optional: NVIDIA GPU with CUDA
+
+## Quick Start (Windows)
+
+1. **Extract** the downloaded ZIP file
+2. **Run** `start.bat`
+   - First run will automatically install dependencies.
+   - Subsequent runs will start quicker.
+3. **Load Model** - Click the "Load Model" button in the app, this will download or load the model.
+   - If this is the first run, this might take some time.
+4. **Drop an image** or click the drop zone to select one.
+5. **Run OCR** - Click "Run OCR" to process.
+
+That's it!
+
+## Linux/macOS
+
+**Note:** Linux and macOS have not been tested yet. Use `start.sh` instead of `start.bat`.
+
+**PRs welcome!** If you test on Linux/macOS and encounter issues, please open a pull request with fixes.
+
+## Links
+
+- [Model HuggingFace](https://huggingface.co/deepseek-ai/DeepSeek-OCR)
+- [Model Blog Post](https://deepseek.ai/blog/deepseek-ocr-context-compression)
+- [Model GitHub](https://github.com/deepseek-ai/DeepSeek-OCR)
+
+## Future goals (PRs welcome!)
+
+- [ ] Code cleanup needed (quickly put together)
+- [ ] PDF support
+- [ ] Batch processing
+- [ ] ???
+
+## License
+
+MIT
