@@ -477,6 +477,26 @@ def serve_output_file(filename):
     """Serve files from the outputs directory"""
     return send_from_directory(OUTPUT_DIR, filename)
 
+@app.route('/', methods=['GET'])
+def serve_index():
+    """Serve the main HTML file"""
+    return send_file(os.path.join(STATIC_DIR, 'index.html'))
+
+@app.route('/styles.css', methods=['GET'])
+def serve_styles():
+    """Serve the CSS file"""
+    return send_file(os.path.join(STATIC_DIR, 'styles.css'), mimetype='text/css')
+
+@app.route('/renderer.js', methods=['GET'])
+def serve_renderer():
+    """Serve the renderer JavaScript file"""
+    return send_file(os.path.join(STATIC_DIR, 'renderer.js'), mimetype='application/javascript')
+
+@app.route('/main.js', methods=['GET'])
+def serve_main():
+    """Serve the main JavaScript file (for compatibility, though not used in browser)"""
+    return send_file(os.path.join(STATIC_DIR, 'main.js'), mimetype='application/javascript')
+
 if __name__ == '__main__':
     # Load model on startup
     logger.info("Starting DeepSeek OCR Server...")
