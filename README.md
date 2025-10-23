@@ -57,6 +57,7 @@ Note: if you have issues processing images but the model loads properly, please 
 - [ ] PDF support
 - [ ] Batch processing
 - [ ] CPU support?
+- [ ] Web version (so you can run the server on a different machine)
 - [ ] Better progress bar algo
 - [ ] ???
 
