@@ -1,4 +1,17 @@
-const { ipcRenderer } = require('electron');
+// Detect if running in Electron or Browser
+const isElectron = typeof require !== 'undefined' && typeof window !== 'undefined' && typeof window.process === 'object';
+let ipcRenderer = null;
+
+if (isElectron) {
+    try {
+        ipcRenderer = require('electron').ipcRenderer;
+    } catch (e) {
+        console.log('Running in browser mode');
+    }
+}
+
+// Determine API base URL
+const API_BASE_URL = isElectron ? 'http://127.0.0.1:5000' : window.location.origin;
 
 // DOM Elements
 const dropZone = document.getElementById('drop-zone');
@@ -109,7 +122,11 @@ function setupEventListeners() {
         if (files.length > 0) {
             const file = files[0];
             if (file.type.startsWith('image/')) {
-                loadImage(file.path);
+                if (isElectron) {
+                    loadImage(file.path);
+                } else {
+                    loadImageFromFile(file);
+                }
             } else {
                 showMessage('Please drop an image file', 'error');
             }
@@ -139,7 +156,16 @@ function setupEventListeners() {
 
 async function checkServerStatus() {
     try {
-        const result = await ipcRenderer.invoke('check-server-status');
+        let result;
+        
+        if (isElectron && ipcRenderer) {
+            result = await ipcRenderer.invoke('check-server-status');
+        } else {
+            // Browser mode - fetch directly
+            const response = await fetch(`${API_BASE_URL}/health`);
+            const data = await response.json();
+            result = { success: response.ok, data: data };
+        }
 
         if (result.success) {
             serverStatus.textContent = 'Connected';
@@ -187,20 +213,69 @@ async function checkServerStatus() {
         }
     } catch (error) {
         console.error('Status check error:', error);
+        serverStatus.textContent = 'Disconnected';
+        serverStatus.className = 'status-value error';
+        ocrBtn.disabled = true;
     }
 }
 
 async function selectImage() {
-    const result = await ipcRenderer.invoke('select-image');
-
-    if (result.success) {
-        loadImage(result.filePath);
+    if (isElectron && ipcRenderer) {
+        const result = await ipcRenderer.invoke('select-image');
+        if (result.success) {
+            loadImage(result.filePath);
+        }
+    } else {
+        // Browser mode - use file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadImageFromFile(file);
+            }
+        };
+        input.click();
     }
 }
 
 async function loadImage(filePath) {
     currentImagePath = filePath;
     imagePreview.src = filePath;
+
+    dropZone.style.display = 'none';
+    previewSection.style.display = 'block';
+
+    // Clear previous results
+    ocrPreviewImage.src = '';
+    resultsContent.innerHTML = '';
+    progressInline.style.display = 'none';
+    copyBtn.style.display = 'none';
+    downloadZipBtn.style.display = 'none';
+    viewBoxesBtn.style.display = 'none';
+    viewTokensBtn.style.display = 'none';
+
+    // Clear overlay boxes
+    ocrBoxesOverlay.innerHTML = '';
+    ocrBoxesOverlay.removeAttribute('viewBox');
+    lastBoxCount = 0;
+
+    // Check server status to update OCR button state
+    await checkServerStatus();
+}
+
+// Browser-specific function to load image from File object
+async function loadImageFromFile(file) {
+    // Store the File object instead of path
+    currentImagePath = file;
+    
+    // Create data URL for preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        imagePreview.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
 
     dropZone.style.display = 'none';
     previewSection.style.display = 'block';
@@ -269,7 +344,20 @@ function closeLightbox() {
 
 function viewOriginalImage() {
     if (currentImagePath) {
-        openLightbox(currentImagePath);
+        if (isElectron) {
+            openLightbox(currentImagePath);
+        } else {
+            // In browser mode, currentImagePath is a File object, convert to data URL
+            if (currentImagePath instanceof File) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    openLightbox(e.target.result);
+                };
+                reader.readAsDataURL(currentImagePath);
+            } else {
+                openLightbox(imagePreview.src);
+            }
+        }
     }
 }
 
@@ -282,7 +370,21 @@ async function viewBoxesImage() {
 
     // Load the original image
     const img = new Image();
-    img.src = currentImagePath;
+    if (isElectron) {
+        img.src = currentImagePath;
+    } else {
+        // In browser mode, convert File to data URL
+        if (currentImagePath instanceof File) {
+            const reader = new FileReader();
+            const dataUrl = await new Promise((resolve) => {
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(currentImagePath);
+            });
+            img.src = dataUrl;
+        } else {
+            img.src = imagePreview.src;
+        }
+    }
 
     await new Promise((resolve, reject) => {
         img.onload = resolve;
@@ -647,13 +749,21 @@ async function loadModel() {
         pollInterval = setInterval(pollProgress, 500);
 
         // Trigger model loading
-        const result = await ipcRenderer.invoke('load-model');
+        let result;
+        if (isElectron && ipcRenderer) {
+            result = await ipcRenderer.invoke('load-model');
+        } else {
+            // Browser mode - call API directly
+            const response = await fetch(`${API_BASE_URL}/load_model`, { method: 'POST' });
+            const data = await response.json();
+            result = { success: response.ok, data: data };
+        }
 
         // Wait for final status
         await new Promise(resolve => {
             const checkStatus = setInterval(async () => {
                 try {
-                    const response = await fetch('http://127.0.0.1:5000/progress');
+                    const response = await fetch(`${API_BASE_URL}/progress`);
                     const data = await response.json();
 
                     if (data.status === 'loaded' || data.status === 'error') {
@@ -725,7 +835,21 @@ async function performOCR() {
         ocrBoxesOverlay.removeAttribute('viewBox');
 
         // Load image into preview and get dimensions
-        ocrPreviewImage.src = currentImagePath;
+        if (isElectron) {
+            ocrPreviewImage.src = currentImagePath;
+        } else {
+            // In browser mode, convert File to data URL
+            if (currentImagePath instanceof File) {
+                const reader = new FileReader();
+                const dataUrl = await new Promise((resolve) => {
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(currentImagePath);
+                });
+                ocrPreviewImage.src = dataUrl;
+            } else {
+                ocrPreviewImage.src = imagePreview.src;
+            }
+        }
         await new Promise((resolve) => {
             ocrPreviewImage.onload = () => {
                 imageNaturalWidth = ocrPreviewImage.naturalWidth;
@@ -738,7 +862,7 @@ async function performOCR() {
         // Poll for token count and raw token stream updates
         tokenPollInterval = setInterval(async () => {
             try {
-                const response = await fetch('http://127.0.0.1:5000/progress');
+                const response = await fetch(`${API_BASE_URL}/progress`);
                 const data = await response.json();
 
                 if (data.status === 'processing') {
@@ -772,13 +896,31 @@ async function performOCR() {
             }
         }, 200); // Poll every 200ms for smooth updates
 
-        const result = await ipcRenderer.invoke('perform-ocr', {
-            imagePath: currentImagePath,
-            promptType: promptType.value,
-            baseSize: parseInt(baseSize.value),
-            imageSize: parseInt(imageSize.value),
-            cropMode: cropMode.checked
-        });
+        let result;
+        if (isElectron && ipcRenderer) {
+            result = await ipcRenderer.invoke('perform-ocr', {
+                imagePath: currentImagePath,
+                promptType: promptType.value,
+                baseSize: parseInt(baseSize.value),
+                imageSize: parseInt(imageSize.value),
+                cropMode: cropMode.checked
+            });
+        } else {
+            // Browser mode - send file via fetch
+            const formData = new FormData();
+            formData.append('image', currentImagePath);
+            formData.append('prompt_type', promptType.value);
+            formData.append('base_size', baseSize.value);
+            formData.append('image_size', imageSize.value);
+            formData.append('crop_mode', cropMode.checked ? 'true' : 'false');
+
+            const response = await fetch(`${API_BASE_URL}/ocr`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            result = { success: response.ok, data: data, error: data.message };
+        }
 
         // Stop polling
         if (tokenPollInterval) {
@@ -901,7 +1043,7 @@ function displayResults(result, promptType) {
         const cacheBuster = Date.now();
         const renderedMarkdown = formattedResult.replace(
             /!\[([^\]]*)\]\(images\/([^)]+)\)/g,
-            `![$1](http://127.0.0.1:5000/outputs/images/$2?t=${cacheBuster})`
+            `![$1](${API_BASE_URL}/outputs/images/$2?t=${cacheBuster})`
         );
         resultsContent.innerHTML = marked.parse(renderedMarkdown);
     } else {
@@ -955,7 +1097,7 @@ async function downloadZip() {
         const imagesFolder = zip.folder('images');
         const imagePromises = Array.from(imageFiles).map(async (filename) => {
             try {
-                const response = await fetch(`http://127.0.0.1:5000/outputs/images/${filename}`);
+                const response = await fetch(`${API_BASE_URL}/outputs/images/${filename}`);
                 if (response.ok) {
                     const blob = await response.blob();
                     imagesFolder.file(filename, blob);
