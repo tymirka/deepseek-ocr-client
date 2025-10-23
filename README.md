@@ -6,6 +6,7 @@ A real-time Electron-based desktop GUI for [DeepSeek-OCR](https://github.com/dee
 
 ## Features
 
+- **🌐 Web Access:** Use from any device on your local network (new!)
 - Drag-and-drop image upload
 - Real-time OCR processing
 
@@ -37,6 +38,38 @@ A real-time Electron-based desktop GUI for [DeepSeek-OCR](https://github.com/dee
 
 Note: if you have issues processing images but the model loads properly, please close and re-open the app and try with the default resolution for "base" and "size". This is a [known issue](https://github.com/ihatecsv/deepseek-ocr-client/issues/2), if you can help to fix it I would appreciate it!
 
+## Web Access (Local Network)
+
+**New Feature:** The Flask server now serves the entire client interface on your local network!
+
+You can access the OCR client from any device on your network (phone, tablet, another computer) without installing the Electron app.
+
+### How to use:
+
+1. **Start the server** on your main machine:
+   ```bash
+   python start.py
+   ```
+
+2. **Find your server's IP address:**
+   - Windows: `ipconfig`
+   - Linux/macOS: `ip addr` or `ifconfig`
+
+3. **Access from any device on your network:**
+   ```
+   http://[YOUR-SERVER-IP]:5000
+   ```
+   Example: `http://192.168.1.100:5000`
+
+### Features:
+- Full OCR functionality in the browser
+- No Electron installation needed on client devices
+- Drag-and-drop image upload works in the browser
+- All processing happens on the server
+- Perfect for using from mobile devices or remote machines
+
+**Note:** The server runs on `0.0.0.0:5000` to accept connections from any device on your local network. Make sure your firewall allows incoming connections on port 5000.
+
 ## Linux/macOS
 
 **Note:** Linux and macOS have not been tested yet. Use `start-client.sh` instead of `start-client.bat`.
@@ -57,7 +90,7 @@ Note: if you have issues processing images but the model loads properly, please 
 - [ ] PDF support
 - [ ] Batch processing
 - [ ] CPU support?
-- [ ] Web version (so you can run the server on a different machine)
+- [x] Web version (so you can run the server on a different machine) ✅ **Implemented!**
 - [ ] Better progress bar algo
 - [ ] ???
 
