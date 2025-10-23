@@ -6,7 +6,7 @@ Handles model loading, caching, and OCR inference
 import os
 import sys
 import logging
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 import torch
 from transformers import AutoModel, AutoTokenizer
@@ -34,6 +34,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(SCRIPT_DIR, '..', 'cache')
 MODEL_CACHE_DIR = os.path.join(CACHE_DIR, 'models')
 OUTPUT_DIR = os.path.join(CACHE_DIR, 'outputs')
+STATIC_DIR = os.path.join(SCRIPT_DIR, '..')  # Parent directory for static files
 
 # Progress tracking
 progress_data = {
@@ -476,6 +477,26 @@ def serve_output_file(filename):
     """Serve files from the outputs directory"""
     return send_from_directory(OUTPUT_DIR, filename)
 
+@app.route('/', methods=['GET'])
+def serve_index():
+    """Serve the main HTML file"""
+    return send_file(os.path.join(STATIC_DIR, 'index.html'))
+
+@app.route('/styles.css', methods=['GET'])
+def serve_styles():
+    """Serve the CSS file"""
+    return send_file(os.path.join(STATIC_DIR, 'styles.css'), mimetype='text/css')
+
+@app.route('/renderer.js', methods=['GET'])
+def serve_renderer():
+    """Serve the renderer JavaScript file"""
+    return send_file(os.path.join(STATIC_DIR, 'renderer.js'), mimetype='application/javascript')
+
+@app.route('/main.js', methods=['GET'])
+def serve_main():
+    """Serve the main JavaScript file (for compatibility, though not used in browser)"""
+    return send_file(os.path.join(STATIC_DIR, 'main.js'), mimetype='application/javascript')
+
 if __name__ == '__main__':
     # Load model on startup
     logger.info("Starting DeepSeek OCR Server...")
@@ -485,5 +506,5 @@ if __name__ == '__main__':
     import logging as log
     log.getLogger('werkzeug').disabled = True
 
-    # Run Flask server without request logging
-    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
+    # Run Flask server without request logging on all network interfaces
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
